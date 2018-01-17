@@ -1,9 +1,6 @@
 
-* Initialize
-clear all
-cd "C:\Users\jmarshall2\Documents\yird-2018"
-
 * Read in data
+clear all
 import delim county-level-data.csv
 
 * Data wrangling
@@ -185,7 +182,7 @@ refcat(2.region_2010 "<br> <strong>Region (ref=Northeast)</strong>" median_incom
 
 
 
-**************** Extra
+**************** Extra stuff
 
 * comparison of different models
 tobit ln_pct_pos_words totrate if numtweets>30, ll(0) //tobit
@@ -216,10 +213,7 @@ graph export histograms_logged.png, replace
 
 
 
-
-
-
-* export to excel
+* export to excel for tableau purposes
 export excel fips *pct* totrate evanrate bprtrate mprtrate cathrate *10tile high* low* ///
 median_income propmale2010 crimerate2000 pblack2010 pforeign2010 pwhite2010 gop16 region_2010 ///
 numtweets ///
@@ -227,10 +221,6 @@ using "workdata.xlsx" , firstrow(variables) replace
 
 
 
-
-* To do:
-* Make descriptive stats table
-* Make maps (choropleth of sentiment and coverage map showing tweets)
 
 
 

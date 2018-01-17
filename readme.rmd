@@ -1,14 +1,3 @@
----
-title: "readme"
-author: "Joey Marshall"
-date: "January 17, 2018"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ## Marshall, YIRD 2018 syntax and data
 This repo contains the data and syntax needed to replicate the analysis in my 2018 Yearbook of International Religious Demography chapter. Note that, per Twitter's terms of service, I cannot share the actual text of the tweets. I can only share Tweet IDs, which you can "rehydrate" on your own. Note that some of the tweets used my original analysis may have been deleted, which would change the sample. I'm not responsible for those deletions. Hopefully they won't change the analysis in any meaningful way.
 
