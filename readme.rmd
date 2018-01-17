@@ -1,0 +1,164 @@
+---
+title: "readme"
+author: "Joey Marshall"
+date: "January 17, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Marshall, YIRD 2018 syntax and data
+This repo contains the data and syntax needed to replicate the analysis in my 2018 Yearbook of International Religious Demography chapter. Note that, per Twitter's terms of service, I cannot share the actual text of the tweets. I can only share Tweet IDs, which you can "rehydrate" on your own. Note that some of the tweets used my original analysis may have been deleted, which would change the sample. I'm not responsible for those deletions. Hopefully they won't change the analysis in any meaningful way.
+
+This repo also contain the aggregated, county-level data. 
+
+The syntax below is the R code to classify the tweets into the "emotion" categories. The syntax in "main.do" is the Stata code to do the regressions. The Tableau files contain the data visualizations.
+
+Note that the Tweet IDs are stored in "tweet_ids.csv". After rehydrating them, read the Tweets into R and (if you want the syntax below to work without changing it) save the tweets to a dataframe called "data".
+
+
+```{r}
+
+# Initialize
+install.packages("tidyverse")
+install.packages("quanteda")
+library(tidyverse)
+library(quanteda)
+
+# Convert tweets to corpus
+tweetscorpus = corpus(data$text)
+
+# save the raw text of the tweets in a docvar
+docvars(tweetscorpus, "Rawtext") <- data$text
+
+# tokenize to get number of words
+tweetstokens = tokens(tweetscorpus, remove_punct=T)
+
+# Read in the NRC emotions lexicon
+lines = length(readLines("nrc-words-emotions-lexicon.txt"))
+lexicon = readLines("nrc-words-emotions-lexicon.txt")[29:lines] # read data into a data.frame
+lexicon = strsplit(lexicon, "\t")
+
+# Convert lexicon to object of type corpus
+wordscorp = corpus(sapply(lexicon,function(x) x[1]))
+
+# Assign document-level variables
+docvars(wordscorp, "Emotion") <- sapply(lexicon,function(x) x[2])
+docvars(wordscorp, "TF") <- sapply(lexicon,function(x) x[3])
+
+# Create lists of words
+angerwords = wordscorp[(docvars(wordscorp, "Emotion")=="anger" & docvars(wordscorp, "TF")==1)]
+fearwords = wordscorp[(docvars(wordscorp, "Emotion")=="fear" & docvars(wordscorp, "TF")==1)]
+anticipationwords = wordscorp[(docvars(wordscorp, "Emotion")=="anticipation" & docvars(wordscorp, "TF")==1)]
+trustwords = wordscorp[(docvars(wordscorp, "Emotion")=="trust" & docvars(wordscorp, "TF")==1)]
+surprisewords = wordscorp[(docvars(wordscorp, "Emotion")=="surprise" & docvars(wordscorp, "TF")==1)]
+sadnesswords = wordscorp[(docvars(wordscorp, "Emotion")=="sadness" & docvars(wordscorp, "TF")==1)]
+joywords = wordscorp[(docvars(wordscorp, "Emotion")=="joy" & docvars(wordscorp, "TF")==1)]
+disgustwords = wordscorp[(docvars(wordscorp, "Emotion")=="disgust" & docvars(wordscorp, "TF")==1)]
+poswords = wordscorp[(docvars(wordscorp, "Emotion")=="positive" & docvars(wordscorp, "TF")==1)]
+negwords = wordscorp[(docvars(wordscorp, "Emotion")=="negative" & docvars(wordscorp, "TF")==1)]
+
+# Create the emotions dictionary
+emotionsdict = dictionary(list(anger=angerwords,
+                               fear=fearwords,
+                               anticipation=anticipationwords,
+                               trust=trustwords,
+                               surprise=surprisewords,
+                               sadness=sadnesswords,
+                               joy=joywords,
+                               disgust=disgustwords,
+                               positive=poswords,
+                               negative=negwords))
+
+
+# Get english stopwords from quanteda and assign them to a vector
+eng.stopwords = stopwords('english')
+
+# Convert tweets to doc-term matrix
+tweetsdfm = dfm(tweetscorpus,
+                tolower = TRUE,
+                dictionary=emotionsdict)
+
+# Get numbers of various kinds of words in tweets
+numanger = as.numeric(tweetsdfm[,"anger"])
+numfear = as.numeric(tweetsdfm[,"fear"])
+numanticipation = as.numeric(tweetsdfm[,"anticipation"])
+numtrust = as.numeric(tweetsdfm[,"trust"])
+numsurprise = as.numeric(tweetsdfm[,"surprise"])
+numsadness = as.numeric(tweetsdfm[,"sadness"])
+numjoy = as.numeric(tweetsdfm[,"joy"])
+numdisgust = as.numeric(tweetsdfm[,"disgust"])
+numpos = as.numeric(tweetsdfm[,"positive"])
+numneg = as.numeric(tweetsdfm[,"negative"])
+
+# Get proportions of various kinds of words in tweets
+propanger = as.numeric(tweetsdfm[,"anger"] / ntoken(tweetstokens))
+propfear =  as.numeric(tweetsdfm[,"fear"] / ntoken(tweetstokens))
+propanticipation =  as.numeric(tweetsdfm[,"anticipation"] / ntoken(tweetstokens))
+proptrust =  as.numeric(tweetsdfm[,"trust"] / ntoken(tweetstokens))
+propsurprise =  as.numeric(tweetsdfm[,"surprise"] / ntoken(tweetstokens))
+propsadness =  as.numeric(tweetsdfm[,"sadness"] / ntoken(tweetstokens))
+propjoy =  as.numeric(tweetsdfm[,"joy"] / ntoken(tweetstokens))
+propdisgust =  as.numeric(tweetsdfm[,"disgust"] / ntoken(tweetstokens))
+proppos =  as.numeric(tweetsdfm[,"positive"] / ntoken(tweetstokens))
+propneg =  as.numeric(tweetsdfm[,"negative"] / ntoken(tweetstokens))
+
+
+# Put everything back into the dataframe
+data$propanger = propanger
+data$propfear = propfear
+data$propanticipation = propanticipation
+data$proptrust = proptrust
+data$propsurprise = propsurprise
+data$propsadness = propsadness
+data$propjoy = propjoy
+data$propdisgust = propdisgust
+data$proppos = proppos
+data$propneg = propneg
+data$numanger = numanger
+data$numfear = numfear
+data$numanticipation = numanticipation
+data$numtrust = numtrust
+data$numsurprise = numsurprise
+data$numsadness = numsadness
+data$numjoy = numjoy
+data$numdisgust = numdisgust
+data$numpos = numpos
+data$numneg = numneg
+data$numwords = ntoken(tweetstokens)
+
+# Save the full data as .csv
+# write.csv(data, "tweet-level-data.csv")
+
+# Collapse to county level and save as csv
+# This code should be optimized and simplified
+county.level.data = data
+county.level.data$text=NULL
+county.level.data = aggregate(county.level.data, by=list(county.level.data$fips), FUN = mean)
+county.level.data = county.level.data[, -grep("num", colnames(county.level.data))]
+county.level.data2 = data
+county.level.data2$text=NULL
+county.level.data2$numtweets = 1
+county.level.data2 = aggregate(county.level.data2, by=list(county.level.data2$fips), FUN = sum)
+county.level.data2 = county.level.data2[, -grep("prop", colnames(county.level.data2))]
+county.level.data2$fips = county.level.data2$Group.1
+county.level.data <- merge(county.level.data,county.level.data2,by="fips", all=TRUE)
+rm(county.level.data2)
+write.csv(county.level.data, "county-level-data.csv")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
